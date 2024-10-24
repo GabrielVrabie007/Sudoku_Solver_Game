@@ -1,24 +1,15 @@
 import pygame
 import sys
+from Backtracking import solve_with_backtracking
+from Constraint_propagation import solve_with_constraint_propagation
+from Measures import BUTTON_COLOR, BUTTON_HOVER_COLOR, BUTTON_HEIGHT, BLACK, ALGO_BUTTON_COLOR, ALGO_BUTTON_HOVER_COLOR, \
+    ALGO_BUTTON_HEIGHT, GRID_SIZE, GRAY, HIGHLIGHT_COLOR, USER_INPUT_COLOR, SCREEN_SIZE, WHITE
 
 pygame.init()
 
-SCREEN_SIZE = 600
-GRID_SIZE = 9
 CELL_SIZE = SCREEN_SIZE // GRID_SIZE
-BUTTON_HEIGHT = 70
-ALGO_BUTTON_HEIGHT = 40
-TOTAL_HEIGHT = SCREEN_SIZE + BUTTON_HEIGHT + ALGO_BUTTON_HEIGHT
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-HIGHLIGHT_COLOR = (173, 216, 230)
-GRAY = (240, 240, 240)
-USER_INPUT_COLOR = (255, 102, 0)
-BUTTON_COLOR = (70, 70, 70)
-BUTTON_HOVER_COLOR = (100, 100, 100)
-ALGO_BUTTON_COLOR = (80, 80, 80)
-ALGO_BUTTON_HOVER_COLOR = (120, 120, 120)
+TOTAL_HEIGHT = SCREEN_SIZE + BUTTON_HEIGHT + ALGO_BUTTON_HEIGHT
 
 board = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
@@ -40,6 +31,9 @@ font = pygame.font.SysFont("Arial", 24)
 user_font = pygame.font.SysFont("Arial", 24, bold=True)
 
 
+
+
+
 class Grid:
     def __init__(self, board):
         self.board = board
@@ -47,6 +41,8 @@ class Grid:
         self.user_inputs = set()
         self.algo_buttons = ["Backtracking", "Constraint Propagation", "Dancing Links (DLX)"]
         self.selected_algo = None
+        self.possibilities = self.initialize_possibilities()
+
 
     def draw_grid(self):
         screen.fill(WHITE)
@@ -56,7 +52,6 @@ class Grid:
         for x in range(0, SCREEN_SIZE, CELL_SIZE * 3):
             pygame.draw.line(screen, BLACK, (x, 0), (x, SCREEN_SIZE), 2)
             pygame.draw.line(screen, BLACK, (0, x), (SCREEN_SIZE, x), 2)
-
     def draw_numbers(self):
         for row in range(GRID_SIZE):
             for col in range(GRID_SIZE):
@@ -124,6 +119,51 @@ class Grid:
             print(f"Selected Algorithm: {self.algo_buttons[col]}")
             return self.algo_buttons[col]
         return None
+    def initialize_possibilities(self):
+        possibilities = {}
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                if self.board[row][col] == 0:
+                    possibilities[(row, col)] = set(range(1, 10))  # All numbers 1-9 are possible
+                else:
+                    possibilities[(row, col)] = set()  # No possibilities for filled cells
+        return possibilities
+
+    def update_possibilities(self):
+        # Update the possibilities for all cells
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                if self.board[row][col] == 0:
+                    self.possibilities[(row, col)] = self.find_possibilities(row, col)
+                else:
+                    self.possibilities[(row, col)] = set()
+
+    def find_possibilities(self, row, col):
+        # Find the possible values for a cell
+        if self.board[row][col] != 0:
+            return set()
+
+        possible_values = set(range(1, 10))
+
+        # Eliminate values based on the row
+        for i in range(GRID_SIZE):
+            if self.board[row][i] in possible_values:
+                possible_values.remove(self.board[row][i])
+
+        # Eliminate values based on the column
+        for i in range(GRID_SIZE):
+            if self.board[i][col] in possible_values:
+                possible_values.remove(self.board[i][col])
+
+        # Eliminate values based on the 3x3 box
+        box_row = (row // 3) * 3
+        box_col = (col // 3) * 3
+        for i in range(box_row, box_row + 3):
+            for j in range(box_col, box_col + 3):
+                if self.board[i][j] in possible_values:
+                    possible_values.remove(self.board[i][j])
+
+        return possible_values
 
 
 def main():
@@ -141,8 +181,10 @@ def main():
 
                 if pos[1] > SCREEN_SIZE + BUTTON_HEIGHT:
                     grid.select_algo(pos)
+                    solve_with_backtracking(grid)
                 elif pos[1] > SCREEN_SIZE:
                     grid.select_number(pos)
+                    solve_with_constraint_propagation(grid)
                 else:
                     selected = grid.highlight_cell(pos)
                     if selected and grid.selected_number:
