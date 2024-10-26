@@ -1,69 +1,66 @@
 import pygame
-import sys
+from Measures import *
 import random
 from Backtracking import *
 from Constraint_propagation import *
-from Measures import *
+from inter import screen, user_font, font
 
 
-def generate_random_sudoku():
-    """Generate a random Sudoku puzzle by filling the board and removing some cells."""
+class Grid:
+    def __init__(self, board=None):
+        self.original_board = [row[:] for row in board] if board else [[0] * GRID_SIZE for _ in range(GRID_SIZE)]
+        self.board = [row[:] for row in self.original_board]
+        self.selected_number = None
+        self.user_inputs = set()
+        self.hint_mode = False
+        self.move_stack = []
+        self.redo_stack = []
+        self.algo_buttons = ["Backtracking", "Constraint Propagation", "Dancing Links (DLX)"]
+        self.selected_algo = None
+        self.possibilities = self.initialize_possibilities()
 
-    def fill_board(board):
-        empty = find_empty(board)
+    def generate_random_board(self, num_clues=25):
+        self.board = [[0 for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+        self.user_inputs.clear()
+        self.solve_board_with_backtracking()
+        self.remove_random_cells(num_clues)
+        self.original_board = [row[:] for row in self.board]
+        self.possibilities = self.initialize_possibilities()
+
+    def solve_board_with_backtracking(self):
+        """Helper function to solve the board using backtracking."""
+        empty = find_empty(self.board)
         if not empty:
             return True
         row, col = empty
 
-        nums = list(range(1, 10))
-        random.shuffle(nums)
-        for num in nums:
-            if is_valid(board, num, row, col):
-                board[row][col] = num
-                if fill_board(board):
+        numbers = list(range(1, 10))
+        random.shuffle(numbers)
+        for num in numbers:
+            if is_valid(self.board, num, row, col):
+                self.board[row][col] = num
+                if self.solve_board_with_backtracking():
                     return True
-                board[row][col] = 0
-
+                self.board[row][col] = 0
         return False
 
-    def remove_numbers(board, attempts=40):
-        """Remove numbers from a filled board to create a puzzle with some empty cells."""
-        while attempts > 0:
-            row = random.randint(0, 8)
-            col = random.randint(0, 8)
-            while board[row][col] == 0:
-                row = random.randint(0, 8)
-                col = random.randint(0, 8)
-            board[row][col] = 0
-            attempts -= 1
+    def remove_random_cells(self, num_clues):
+        total_cells = GRID_SIZE * GRID_SIZE
+        cells_to_remove = total_cells - num_clues
 
-    # Generate a fully filled board
-    board = [[0 for _ in range(9)] for _ in range(9)]
-    fill_board(board)
+        while cells_to_remove > 0:
+            row = random.randint(0, GRID_SIZE - 1)
+            col = random.randint(0, GRID_SIZE - 1)
+            if self.board[row][col] != 0:
+                self.board[row][col] = 0
+                cells_to_remove -= 1
 
-    # Remove numbers to create a playable puzzle
-    remove_numbers(board)
-
-    return board
-
-
-pygame.init()
-
-screen = pygame.display.set_mode((SCREEN_SIZE, TOTAL_HEIGHT))
-pygame.display.set_caption("Sudoku")
-pygame.font.init()
-
-font = pygame.font.SysFont("Arial", 24)
-user_font = pygame.font.SysFont("Arial", 24, bold=True)
-
-
-class Grid:
-    def __init__(self, board):
-        self.board = board
-        self.selected_number = None
-        self.user_inputs = set()
-        self.algo_buttons = ["Backtracking", "Constraint Propagation", "Dancing Links (DLX)"]
-        self.selected_algo = None
+    def reset_board(self, difficulty="medium"):
+        num_clues = {"easy": 35, "medium": 25, "hard": 20}.get(difficulty, 25)
+        self.generate_random_board(num_clues)
+        self.user_inputs.clear()
+        self.move_stack.clear()
+        self.redo_stack.clear()
         self.possibilities = self.initialize_possibilities()
 
     def draw_grid(self):
@@ -75,20 +72,12 @@ class Grid:
             pygame.draw.line(screen, BLACK, (x, 0), (x, SCREEN_SIZE), 2)
             pygame.draw.line(screen, BLACK, (0, x), (SCREEN_SIZE, x), 2)
 
-    def reset_board(self, new_board):
-        """Reset the grid with a new board layout."""
-        self.board = new_board
-        self.user_inputs.clear()
-        self.possibilities = self.initialize_possibilities()
-
     def draw_numbers(self):
         for row in range(GRID_SIZE):
             for col in range(GRID_SIZE):
                 if self.board[row][col] != 0:
-                    if (row, col) in self.user_inputs:
-                        text = user_font.render(str(self.board[row][col]), True, USER_INPUT_COLOR)
-                    else:
-                        text = font.render(str(self.board[row][col]), True, BLACK)
+                    color = USER_INPUT_COLOR if (row, col) in self.user_inputs else BLACK
+                    text = user_font.render(str(self.board[row][col]), True, color)
                     screen.blit(text, (col * CELL_SIZE + CELL_SIZE // 3, row * CELL_SIZE + CELL_SIZE // 8))
 
     def highlight_cell(self, pos):
@@ -124,14 +113,34 @@ class Grid:
             col = pos[0] // CELL_SIZE
             row = pos[1] // CELL_SIZE
             if (row, col) in self.user_inputs or self.board[row][col] == 0:
-                # If the number is the same as the selected, clear the cell
-                if self.board[row][col] == selected_number:
-                    self.board[row][col] = 0
-                    self.user_inputs.discard((row, col))
-                else:
-                    # Otherwise, place the new number
-                    self.board[row][col] = selected_number
+                previous = self.board[row][col]
+                self.board[row][col] = 0 if previous == selected_number else selected_number
+                if previous == 0:
                     self.user_inputs.add((row, col))
+                elif self.board[row][col] == 0:
+                    self.user_inputs.discard((row, col))
+                self.move_stack.append((row, col, previous, selected_number))
+                self.redo_stack.clear()
+
+    def undo(self):
+        if self.move_stack:
+            row, col, old, new = self.move_stack.pop()
+            self.redo_stack.append((row, col, self.board[row][col], old))
+            self.board[row][col] = old
+            if old == 0:
+                self.user_inputs.discard((row, col))
+            else:
+                self.user_inputs.add((row, col))
+
+    def redo(self):
+        if self.redo_stack:
+            row, col, old, new = self.redo_stack.pop()
+            self.move_stack.append((row, col, self.board[row][col], new))
+            self.board[row][col] = new
+            if new == 0:
+                self.user_inputs.discard((row, col))
+            else:
+                self.user_inputs.add((row, col))
 
     def draw_algo_buttons(self):
         for i, algo in enumerate(self.algo_buttons):
@@ -150,8 +159,10 @@ class Grid:
     def select_algo(self, pos):
         if SCREEN_SIZE + BUTTON_HEIGHT <= pos[1] <= TOTAL_HEIGHT:
             col = pos[0] // (SCREEN_SIZE // len(self.algo_buttons))
-            self.selected_algo = col
-            print(f"Selected Algorithm: {self.algo_buttons[col]}")
+            if self.selected_algo is None or self.selected_algo != col:
+                self.selected_algo = col
+                self.reset_board()  # Clear and generate a new random board when a new algorithm is selected
+                print(f"Selected Algorithm: {self.algo_buttons[col]}")
             return self.algo_buttons[col]
         return None
 
@@ -160,9 +171,9 @@ class Grid:
         for row in range(GRID_SIZE):
             for col in range(GRID_SIZE):
                 if self.board[row][col] == 0:
-                    possibilities[(row, col)] = set(range(1, 10))  # All numbers 1-9 are possible
+                    possibilities[(row, col)] = set(range(1, 10))
                 else:
-                    possibilities[(row, col)] = set()  # No possibilities for filled cells
+                    possibilities[(row, col)] = set()
         return possibilities
 
     def update_possibilities(self):
@@ -200,56 +211,3 @@ class Grid:
                     possible_values.remove(self.board[i][j])
 
         return possible_values
-
-
-def main():
-    # Generate an initial random board
-    initial_board = generate_random_sudoku()
-    grid = Grid(initial_board)
-    selected = None
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                pos = pygame.mouse.get_pos()
-
-                # Check if algorithm button is clicked
-                if pos[1] > SCREEN_SIZE + BUTTON_HEIGHT:
-                    selected_algo = grid.select_algo(pos)
-                    if selected_algo:
-                        # Generate a new random board for the new algorithm
-                        new_board = generate_random_sudoku()
-                        grid.reset_board(new_board)
-
-                        if selected_algo == "Backtracking":
-                            solve_with_backtracking(grid)
-                        elif selected_algo == "Constraint Propagation":
-                            solve_with_constraint_propagation(grid)
-                        elif selected_algo == "Dancing Links (DLX)":
-                            # Add the function call for Dancing Links here if implemented
-                            pass
-
-                # Check if number button is clicked
-                elif SCREEN_SIZE <= pos[1] <= SCREEN_SIZE + BUTTON_HEIGHT:
-                    grid.select_number(pos)
-
-                # Otherwise, try to place the number on the grid
-                else:
-                    selected = grid.highlight_cell(pos)
-                    if selected and grid.selected_number:
-                        grid.place_number(pos, grid.selected_number)
-
-        grid.draw_grid()
-        grid.draw_numbers()
-        grid.draw_number_buttons()
-        grid.draw_algo_buttons()
-
-        pygame.display.update()
-
-
-if __name__ == "__main__":
-    main()
