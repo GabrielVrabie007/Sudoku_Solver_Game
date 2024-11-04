@@ -1,5 +1,6 @@
 from Measures import *
 from Backtracking import *
+from inter import *
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_SIZE, TOTAL_HEIGHT))
@@ -19,14 +20,31 @@ class Grid:
         self.selected_algo = None
         self.possibilities = self.initialize_possibilities()
 
-    def draw_grid(self):
+    def draw_grid(self): 
+    # Umple ecranul cu alb
         screen.fill(WHITE)
+
+        # Desenează liniile grilei
         for x in range(0, SCREEN_SIZE, CELL_SIZE):
             pygame.draw.line(screen, BLACK, (x, 0), (x, SCREEN_SIZE), 1)
             pygame.draw.line(screen, BLACK, (0, x), (SCREEN_SIZE, x), 1)
         for x in range(0, SCREEN_SIZE, CELL_SIZE * 3):
             pygame.draw.line(screen, BLACK, (x, 0), (x, SCREEN_SIZE), 2)
             pygame.draw.line(screen, BLACK, (0, x), (SCREEN_SIZE, x), 2)
+
+        # Desenează dreptunghiul verde pentru buton
+        pygame.draw.rect(screen, NEW_BUTTON_COLOR, (0, TOTAL_HEIGHT - ALGO_BUTTON_HEIGHT, SCREEN_SIZE, 40))
+
+        # Creează textul "New" și îl centrează în dreptunghi
+        new_text = font.render("New", True, BLACK)
+        text_rect = new_text.get_rect(center=(SCREEN_SIZE // 2, TOTAL_HEIGHT - ALGO_BUTTON_HEIGHT // 2))
+        screen.blit(new_text, text_rect)
+
+
+    def handle_new_button_click(self, pos):
+        button_center = (SCREEN_SIZE - 20, 20)
+        if (pos[0] - button_center[0]) ** 2 + (pos[1] - button_center[1]) ** 2 <= 10 ** 2:
+            self.reset_board(generate_random_sudoku())
 
     def reset_board(self, new_board):
         """Reset the grid with a new board layout."""
@@ -53,17 +71,25 @@ class Grid:
         return None
 
     def draw_number_buttons(self):
+    # Calculate padding to center the number buttons
+        button_area_width = GRID_SIZE * CELL_SIZE
+        start_x = (SCREEN_SIZE - button_area_width) // 2
+
         for i in range(9):
-            button_rect = pygame.Rect(i * CELL_SIZE, SCREEN_SIZE, CELL_SIZE, BUTTON_HEIGHT)
+            button_rect = pygame.Rect(start_x + i * CELL_SIZE, SCREEN_SIZE, CELL_SIZE, BUTTON_HEIGHT)
             pygame.draw.rect(screen, BUTTON_COLOR, button_rect)
             text = font.render(str(i + 1), True, WHITE)
-            screen.blit(text, (i * CELL_SIZE + CELL_SIZE // 3, SCREEN_SIZE + BUTTON_HEIGHT // 5))
+            screen.blit(text, (start_x + i * CELL_SIZE + CELL_SIZE // 3, SCREEN_SIZE + BUTTON_HEIGHT // 5))
+            
+            # Highlight button on hover
             if button_rect.collidepoint(pygame.mouse.get_pos()):
                 pygame.draw.rect(screen, BUTTON_HOVER_COLOR, button_rect, 2)
 
+        # Indicate selected button
         if self.selected_number:
             pygame.draw.rect(screen, USER_INPUT_COLOR,
-                             (self.selected_number * CELL_SIZE - CELL_SIZE, SCREEN_SIZE, CELL_SIZE, BUTTON_HEIGHT), 3)
+                            (start_x + (self.selected_number - 1) * CELL_SIZE, SCREEN_SIZE, CELL_SIZE, BUTTON_HEIGHT), 3)
+
 
     def select_number(self, pos):
         if SCREEN_SIZE <= pos[1] <= SCREEN_SIZE + BUTTON_HEIGHT:
@@ -89,7 +115,7 @@ class Grid:
     def draw_algo_buttons(self):
         for i, algo in enumerate(self.algo_buttons):
             button_x = i * (SCREEN_SIZE // len(self.algo_buttons))
-            button_y = SCREEN_SIZE + BUTTON_HEIGHT
+            button_y = SCREEN_SIZE + BUTTON_HEIGHT - ALGO_BUTTON_HEIGHT+25
             button_width = SCREEN_SIZE // len(self.algo_buttons)
             button_rect = pygame.Rect(button_x, button_y, button_width, ALGO_BUTTON_HEIGHT)
             pygame.draw.rect(screen, ALGO_BUTTON_COLOR, button_rect)
@@ -98,10 +124,10 @@ class Grid:
             if self.selected_algo is not None and self.selected_algo == i:
                 pygame.draw.rect(screen, USER_INPUT_COLOR, button_rect, 3)
             if button_rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(screen, ALGO_BUTTON_HOVER_COLOR, button_rect, 2)
+                pygame.draw.rect(screen, ALGO_BUTTON_HOVER_COLOR, button_rect, 1)
 
     def select_algo(self, pos):
-        if SCREEN_SIZE + BUTTON_HEIGHT <= pos[1] <= TOTAL_HEIGHT:
+        if BUTTON_HEIGHT <= pos[1] <= TOTAL_HEIGHT-30:
             col = pos[0] // (SCREEN_SIZE // len(self.algo_buttons))
             self.selected_algo = col
             print(f"Selected Algorithm: {self.algo_buttons[col]}")

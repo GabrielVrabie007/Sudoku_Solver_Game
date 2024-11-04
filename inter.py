@@ -4,11 +4,13 @@ import random
 from Backtracking import *
 from Constraint_propagation import *
 from Measures import *
+import pygame
 
+
+# Assume other necessary imports and constants like SCREEN_SIZE, BUTTON_HEIGHT, etc. are defined.
 
 def generate_random_sudoku():
     """Generate a random Sudoku puzzle by filling the board and removing some cells."""
-
     def fill_board(board):
         """Recursively fill the board using backtracking."""
         empty = find_empty(board)
@@ -47,7 +49,6 @@ def generate_random_sudoku():
 
     return board
 
-
 def main():
     # Generate an initial random board
     initial_board = generate_random_sudoku()
@@ -63,14 +64,16 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
+                # Check if the New button is clicked
+                if pos[1]>SCREEN_SIZE+BUTTON_HEIGHT+20:
+                    # Generate a new random Sudoku board
+                    new_board = generate_random_sudoku()
+                    grid.reset_board(new_board)
+
                 # Check if algorithm button is clicked
-                if pos[1] > SCREEN_SIZE + BUTTON_HEIGHT:
+                elif pos[1] > SCREEN_SIZE + BUTTON_HEIGHT:
                     selected_algo = grid.select_algo(pos)
                     if selected_algo:
-                        # Generate a new random board for the new algorithm
-                        new_board = generate_random_sudoku()
-                        grid.reset_board(new_board)
-
                         if selected_algo == "Backtracking":
                             solve_with_backtracking(grid)
                         elif selected_algo == "Constraint Propagation":
@@ -96,6 +99,6 @@ def main():
 
         pygame.display.update()
 
-
 if __name__ == "__main__":
     main()
+
