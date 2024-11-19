@@ -5,7 +5,9 @@ Are 3 algorithms that can solve Sudoku Grid:Backtracking,Constraint-Propagation 
 ## Features
 
 -Running the program will display a pygame window with a sudoku grid the size being the standard 9x9
+
 -Possibility to solve manually or using algorithms
+
 -If generated Grid is too hard you can click on "new" to generate a new one
 
 ![Alt text or description](https://github.com/user-attachments/assets/d380e271-c157-47f2-8d3c-ad6ee52feea6)
