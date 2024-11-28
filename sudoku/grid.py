@@ -29,14 +29,18 @@ def generate_board(difficulty='Easy'):
     return board, initial_positions
 
 
-def is_valid(board, guess, row, col):
-    if guess in board[row]:
-        return False
-    if guess in (board[i][col] for i in range(9)):
-        return False
-    startRow, startCol = 3 * (row // 3), 3 * (col // 3)
-    if guess in (board[r][c] for r in range(startRow, startRow + 3) for c in range(startCol, startCol + 3)):
-        return False
+def is_valid(board, num, row, col):
+    block_row, block_col = (row // 3) * 3, (col // 3) * 3  # Start indices of the 3x3 block
+
+    for i in range(9):  # Check row and column
+        if board[row][i] == num or board[i][col] == num:
+            return False
+
+    for i in range(3):  # Check 3x3 block
+        for j in range(3):
+            if board[block_row + i][block_col + j] == num:
+                return False
+
     return True
 
 
