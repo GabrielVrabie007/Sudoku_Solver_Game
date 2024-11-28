@@ -25,8 +25,8 @@ def generate_board(difficulty='Easy'):
     empties = squares - DIFFICULTY_SETTINGS[difficulty]
     for p in random.sample(range(squares), empties):
         board[p // side][p % side] = 0
-
-    return board
+    initial_positions = [(row, col) for row in range(9) for col in range(9) if board[row][col] != 0]
+    return board, initial_positions
 
 
 def is_valid(board, guess, row, col):

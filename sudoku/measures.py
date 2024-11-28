@@ -1,4 +1,4 @@
-# Configurations for Sudoku Solver UI components
+
 
 # Screen dimensions
 SCREEN_WIDTH = 600
@@ -21,3 +21,5 @@ BUTTON_HIGHLIGHT_COLOR = (200, 200, 0)
 BUTTON_AREA_HEIGHT = 60  # Height of the area at the bottom for buttons
 NUMBER_BUTTONS_START_Y = 20  # Starting Y position for number buttons
 ALGO_BUTTONS_Y = SCREEN_HEIGHT - BUTTON_AREA_HEIGHT  # Y position for algorithm buttons
+
+

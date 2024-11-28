@@ -1,178 +1,207 @@
 from grid import *
+import pygame
+import sys
 
 
-def find_possibilities(board, row, col):
-    if board[row][col] != 0:
-        return set()  # If cell is not empty, return an empty set as no possibilities are needed.
-
-    possible_numbers = set(range(1, 10))  # Start with all numbers as possibilities.
-
-    # Remove numbers present in the same row
-    for c in range(9):
-        if board[row][c] in possible_numbers:
-            possible_numbers.remove(board[row][c])
-
-    # Remove numbers present in the same column
-    for r in range(9):
-        if board[r][col] in possible_numbers:
-            possible_numbers.remove(board[r][col])
-
-    # Remove numbers present in the same 3x3 block
-    block_row_start = (row // 3) * 3
-    block_col_start = (col // 3) * 3
-    for r in range(block_row_start, block_row_start + 3):
-        for c in range(block_col_start, block_col_start + 3):
-            if board[r][c] in possible_numbers:
-                possible_numbers.remove(board[r][c])
-
-    return possible_numbers
-
-
-def solve_with_backtracking(board):
-    """ Solve the Sudoku puzzle using a backtracking algorithm. """
-    find = find_empty(board)
-    if not find:
-        return True  # Puzzle solved
-    else:
-        row, col = find
-
-    for i in range(1, 10):
-        if is_valid(board, i, row, col):
-            board[row][col] = i
-            if solve_with_backtracking(board):
-                return True
-            board[row][col] = 0
-
-    return False  # Trigger backtracking
-
-
-def solve_with_constraint_propagation(board):
-    possibilities = {(r, c): set(range(1, 10)) if board[r][c] == 0 else {board[r][c]}
-                     for r in range(9) for c in range(9)}
-
-    def eliminate_possibilities():
-        updated = False
-        for r in range(9):
-            for c in range(9):
-                if len(possibilities[(r, c)]) == 1:
-                    val = next(iter(possibilities[(r, c)]))
-                    if board[r][c] == 0:
-                        board[r][c] = val  # Set the value on the board if it's not already set
-                    peers = get_peers(r, c)
-                    for (pr, pc) in peers:
-                        if val in possibilities[(pr, pc)]:
-                            possibilities[(pr, pc)].remove(val)
-                            updated = True
-                            if len(possibilities[(pr, pc)]) == 1:
-                                # Recursively set the single possibility to the board
-                                next_val = next(iter(possibilities[(pr, pc)]))
-                                board[pr][pc] = next_val
-        return updated
-
-    def backtrack():
-        for r in range(9):
-            for c in range(9):
-                if board[r][c] == 0:
-                    for num in possibilities[(r, c)]:
-                        if is_valid(board, num, r, c):
-                            board[r][c] = num
-                            if solve_with_constraint_propagation(board):
-                                return True
-                            board[r][c] = 0
-                    return False
+def solve_with_backtracking(board, screen, draw_grid, font, delay):
+    print("Starting backtracking...")  # Debugging entry
+    empty = find_empty(board)
+    if not empty:
+        print("Puzzle solved!")
         return True
+
+    row, col = empty
+    for num in range(1, 10):
+        if is_valid(board, num, row, col):
+            board[row][col] = num
+            draw_grid(screen, font, board, None)
+            pygame.display.update()
+            pygame.time.delay(delay)
+
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        delay = max(10, delay - 10)  # Speed up
+                        print(f"Fast forwarding, new delay: {delay}")
+                    elif event.key == pygame.K_s:
+                        delay = 0  # Skip delay
+                        print("Skipping to end...")
+
+            if solve_with_backtracking(board, screen, draw_grid, font, delay):
+                return True
+
+            board[row][col] = 0
+            draw_grid(screen, font, board, None)
+            pygame.display.update()
+
+    return False
+
+
+def solve_with_constraint_propagation(board, screen, draw_grid, font, delay=100):
+    from itertools import product, combinations
 
     def is_valid(board, num, row, col):
-        block_r = (row // 3) * 3
-        block_c = (col // 3) * 3
-        for i in range(9):
-            if board[row][i] == num or board[i][col] == num:
-                return False
-            if board[block_r + i // 3][block_c + i % 3] == num:
-                return False
-        return True
+        block_row, block_col = (row // 3) * 3, (col // 3) * 3
+        return all(num != board[row][x] for x in range(9)) and \
+               all(num != board[y][col] for y in range(9)) and \
+               all(num != board[block_row + y // 3][block_col + y % 3] for y in range(9))
 
-    if all(len(possibilities[(r, c)]) == 1 for r in range(9) for c in range(9) if board[r][c] == 0):
-        return True  # The board is solved if all cells are singles and valid.
+    def find_possibilities():
+        possibilities = {}
+        for row, col in product(range(9), repeat=2):
+            if board[row][col] == 0:
+                possible = set(range(1, 10))
+                block_row, block_col = (row // 3) * 3, (col // 3) * 3
+                for k in range(9):
+                    possible.discard(board[row][k])
+                    possible.discard(board[k][col])
+                    possible.discard(board[block_row + k // 3][block_col + k % 3])
+                possibilities[(row, col)] = possible
+        return possibilities
 
-    # Apply constraint propagation techniques first
-    while eliminate_possibilities():
-        if all(board[r][c] != 0 for r in range(9) for c in range(9)):
-            return True  # Exit if the board is solved
+    def apply_naked_pairs(possibilities):
+        units = define_units()
+        for unit in units:
+            # Filter cells in the unit that exist in possibilities and have exactly two possibilities
+            pairs = [(cell, possibilities[cell]) for cell in unit if
+                     cell in possibilities and len(possibilities[cell]) == 2]
+            for (cell1, poss1), (cell2, poss2) in combinations(pairs, 2):
+                if poss1 == poss2:
+                    # Remove these possibilities from other cells in the unit
+                    for cell in unit:
+                        if cell in possibilities and cell != cell1 and cell != cell2:
+                            possibilities[cell] -= poss1
 
-    # If constraint propagation can't solve the puzzle, fall back to backtracking
+    def define_units():
+        row_units = [list(product([r], range(9))) for r in range(9)]
+        column_units = [list(product(range(9), [c])) for c in range(9)]
+        box_units = [list(product(range(br, br + 3), range(bc, bc + 3)))
+                     for br in range(0, 9, 3) for bc in range(0, 9, 3)]
+        return row_units + column_units + box_units
+
+    def apply_constraints():
+        possibilities = find_possibilities()
+        apply_naked_pairs(possibilities)
+        changed = False
+        for (row, col), possible in possibilities.items():
+            if len(possible) == 1:
+                board[row][col] = possible.pop()
+                changed = True
+                draw_grid(screen, font, board, None)
+                pygame.display.update()
+                pygame.time.delay(delay)
+        return changed
+
+    def is_solved():
+        return all(board[row][col] != 0 for row in range(9) for col in range(9))
+
+    def backtrack():
+        if is_solved():
+            return True
+        possibilities = find_possibilities()
+        if not possibilities:
+            return False
+        # Find the cell with the least number of possibilities
+        cell, possible = min(possibilities.items(), key=lambda x: len(x[1]))
+        row, col = cell
+        for num in possible:
+            if is_valid(board, num, row, col):
+                board[row][col] = num
+                draw_grid(screen, font, board, None)
+                pygame.display.update()
+                pygame.time.delay(delay)
+                if backtrack():
+                    return True
+                board[row][col] = 0
+                draw_grid(screen, font, board, None)
+                pygame.display.update()
+        return False
+
+    # Apply constraints as far as possible; if unsolved, fallback to backtracking
+    while apply_constraints():
+        if is_solved():
+            return True
     return backtrack()
 
 
-def get_peers(row, col):
-    block_r = (row // 3) * 3
-    block_c = (col // 3) * 3
-    peers = set([(row, i) for i in range(9)] + [(i, col) for i in range(9)]
-                + [(block_r + i, block_c + j) for i in range(3) for j in range(3)])
-    peers.discard((row, col))
-    return peers
+def solve_with_rule_based(board, screen, draw_grid, font, delay=100):
+    from itertools import product, combinations
 
+    def is_valid(board, num, row, col):
+        block_row, block_col = (row // 3) * 3, (col // 3) * 3
+        return all(num != board[row][x] for x in range(9)) and \
+               all(num != board[y][col] for y in range(9)) and \
+               all(num != board[block_row + y // 3][block_col + y % 3] for y in range(9))
 
-def solve_with_rule_based(board):
-    changes_made = False
-    possibilities = {(r, c): set(range(1, 10)) if board[r][c] == 0 else {board[r][c]}
-                     for r in range(9) for c in range(9)}
+    def find_possibilities():
+        possibilities = {}
+        for row, col in product(range(9), repeat=2):
+            if board[row][col] == 0:
+                possible = set(range(1, 10))
+                block_row, block_col = (row // 3) * 3, (col // 3) * 3
+                for k in range(9):
+                    # Check for potential out-of-bounds access
+                    possible.discard(board[row][k])
+                    possible.discard(board[k][col])
+                    if 0 <= block_row + k // 3 < 9 and 0 <= block_col + k % 3 < 9:
+                        possible.discard(board[block_row + k // 3][block_col + k % 3])
+                possibilities[(row, col)] = possible
+        return possibilities
 
-    def apply_rule_based_techniques():
-        updated = False
-        updated |= find_naked_pairs()
-        updated |= find_hidden_singles()
-        return updated
+    def apply_rules(possibilities):
+        changed = False
+        for (row, col), possible in list(possibilities.items()):
+            if len(possible) == 1:
+                num = possible.pop()
+                if is_valid(board, num, row, col):
+                    board[row][col] = num
+                    changed = True
+                    draw_grid(screen, font, board, None)
+                    pygame.display.update()
+                    pygame.time.delay(max(10, delay))
+        return changed
 
-    def find_naked_pairs():
-        found = False
-        for unit in get_all_units():
-            pairs = {}
-            for pos in unit:
-                if len(possibilities[pos]) == 2:
-                    p_tuple = tuple(possibilities[pos])
-                    pairs.setdefault(p_tuple, []).append(pos)
-            for p_tuple, positions in pairs.items():
-                if len(positions) == 2:
-                    for other_pos in unit:
-                        if other_pos not in positions and p_tuple.issubset(possibilities[other_pos]):
-                            original = possibilities[other_pos].copy()
-                            possibilities[other_pos].difference_update(p_tuple)
-                            if possibilities[other_pos] != original:
-                                found = True
-                                if len(possibilities[other_pos]) == 1:
-                                    final_num = next(iter(possibilities[other_pos]))
-                                    board[other_pos[0]][other_pos[1]] = final_num
-                                    changes_made = True
-        return found
-
-    def find_hidden_singles():
-        found = False
-        for unit in get_all_units():
+    def fallback_backtracking():
+        def backtrack():
+            empty = [(row, col) for row, col in product(range(9), repeat=2) if board[row][col] == 0]
+            if not empty:
+                return True
+            row, col = empty[0]
             for num in range(1, 10):
-                positions = [pos for pos in unit if num in possibilities[pos]]
-                if len(positions) == 1:
-                    single_pos = positions[0]
-                    if possibilities[single_pos] != {num}:
-                        possibilities[single_pos] = {num}
-                        board[single_pos[0]][single_pos[1]] = num
-                        found = True
-                        changes_made = True
-        return found
+                if is_valid(board, num, row, col):
+                    board[row][col] = num
+                    draw_grid(screen, font, board, None)
+                    pygame.display.update()
+                    pygame.time.delay(max(10, delay))
+                    if backtrack():
+                        return True
+                    board[row][col] = 0
+            return False
 
-    def get_all_units():
-        units = []
-        for i in range(9):
-            units.append([(i, j) for j in range(9)])  # Rows
-            units.append([(j, i) for j in range(9)])  # Columns
-        for r in range(0, 9, 3):
-            for c in range(0, 9, 3):
-                units.append([(r + dr, c + dc) for dr in range(3) for dc in range(3)])  # Blocks
-        return units
+        print("Falling back to backtracking.")  # Debugging
+        return backtrack()
 
-    while apply_rule_based_techniques():
-        if all(board[r][c] != 0 for r in range(9) for c in range(9)):
-            return True  # Puzzle solved using rule-based techniques
+    iteration = 0
+    max_iterations = 500  # Limit iterations to avoid infinite loop
 
-    # If there are still empty cells, fall back on backtracking
-    return solve_with_backtracking(board) if any(board[r][c] == 0 for r in range(9) for c in range(9)) else True
+    while True:
+        iteration += 1
+        if iteration > max_iterations:
+            print("Max iterations reached, switching to backtracking.")  # Debugging
+            return fallback_backtracking()
+
+        print(f"Iteration {iteration}: Solving with rule-based algorithm.")  # Debugging
+
+        possibilities = find_possibilities()
+        if not possibilities:
+            print("No possibilities left. Exiting.")  # Debugging
+            break
+
+        progress = apply_rules(possibilities)
+        if not progress:
+            if all(board[row][col] != 0 for row, col in product(range(9), repeat=2)):
+                print("Puzzle solved with rule-based algorithm.")  # Debugging
+                return True
+            else:
+                return fallback_backtracking()
+
