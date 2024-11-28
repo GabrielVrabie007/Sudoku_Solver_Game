@@ -1,24 +1,31 @@
 # Sudoku Manually or Using Algorithms Solving
 
-Are 3 algorithms that can solve Sudoku Grid:Backtracking,Constraint-Propagation and Dancing-Links
+Are 3 algorithms that can solve Sudoku Grid:Backtracking,Constraint-Propagation and Rule-Based
 
 ## Features
+
+-Select diffculty using up and down buttons from keyboard
 
 -Running the program will display a pygame window with a sudoku grid the size being the standard 9x9
 
 -Possibility to solve manually or using algorithms
 
--If generated Grid is too hard you can click on "new" to generate a new one
+-Press on keyboard "N" for new grid
 
-![Alt text or description](https://github.com/user-attachments/assets/d380e271-c157-47f2-8d3c-ad6ee52feea6)
+![soved_sukoku](https://github.com/user-attachments/assets/f0431d6d-b90a-4b36-8295-f6e66a23a74b)
+
+### Solved Sukoku
+
+![difficulty](https://github.com/user-attachments/assets/a5ea398d-a986-4e0d-9a16-bdc050a3b8c6)
 
 ## Installation
 
 1.Clone the repository:
 git clone "https://github.com/0DVD0/IAFPS_Sudoku.git"
 
-2.Navigate to the project directory
-cd "IAFPS_Sudoku"
+2.Install your virtual environment
+python -m venv venv
+venv\Scripts\activate
 
 3.Install the dependencies
 pip install -r requirements.txt
@@ -26,7 +33,7 @@ pip install -r requirements.txt
 ## Usage
 
 To start the application,run:
-python inter.py
+python sudoku.py
 
 ## Contributing
 
