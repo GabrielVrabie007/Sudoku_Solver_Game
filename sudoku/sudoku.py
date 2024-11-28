@@ -1,4 +1,3 @@
-import pygame
 from solver import *
 from grid import *
 from measures import *
@@ -185,36 +184,39 @@ def main():
     algo_buttons = ["Backtracking", "Constraint", "Rule-based"]
     algo_funcs = [solve_with_backtracking, solve_with_constraint_propagation, solve_with_rule_based]
 
-    difficulty = select_difficulty(screen, font)
-    board, initial_positions = generate_board(difficulty)
-    selected = (0, 0)  # Default to top-left cell
-    selected_number = None
-    running = True
+    while True:  # Loop to allow returning to difficulty selection
+        difficulty = select_difficulty(screen, font)
+        board, initial_positions = generate_board(difficulty)
+        selected = (0, 0)  # Start at the top-left cell
+        selected_number = None
+        running = True
 
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_n:
-                    board, initial_positions = generate_board(difficulty)
-                    selected = (0, 0)  # Reset selection
-                    selected_number = None
-                    display_message(screen, font, "New puzzle generated", duration=500)
-                else:
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_n:
+                        board, initial_positions = generate_board(difficulty)
+                        selected = (0, 0)  # Reset selection
+                        selected_number = None
+                        display_message(screen, font, "New puzzle generated", duration=500)
+                    elif event.key == pygame.K_ESCAPE:  # Handle Esc key to return to difficulty selection
+                        running = False  # Exit the current game loop and show the difficulty menu again
+                    else:
+                        selected, selected_number = handle_mouse_events(
+                            event, board, selected, selected_number, font, screen, algo_funcs, initial_positions
+                        )
+                elif event.type == pygame.MOUSEBUTTONDOWN:
                     selected, selected_number = handle_mouse_events(
                         event, board, selected, selected_number, font, screen, algo_funcs, initial_positions
                     )
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                selected, selected_number = handle_mouse_events(
-                    event, board, selected, selected_number, font, screen, algo_funcs, initial_positions
-                )
 
-        draw_grid(screen, font, board, selected, initial_positions)
-        draw_number_buttons(screen, font, selected_number)
-        draw_algorithm_buttons(screen, font, algo_buttons)
-        pygame.display.update()
+            draw_grid(screen, font, board, selected, initial_positions)
+            draw_number_buttons(screen, font, selected_number)
+            draw_algorithm_buttons(screen, font, algo_buttons)
+            pygame.display.update()
 
 
 if __name__ == "__main__":
