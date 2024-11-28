@@ -12,11 +12,11 @@ Are 3 algorithms that can solve Sudoku Grid:Backtracking,Constraint-Propagation 
 
 -Press on keyboard "N" for new grid
 
-![Alt text or description](https://github.com/0DVD0/IAFPS_Sudoku/issues/2#issue-2701703760)
+![soved_sukoku](https://github.com/user-attachments/assets/f0431d6d-b90a-4b36-8295-f6e66a23a74b)
 
 ### Solved Sukoku
 
-![Alt text or description](https://github.com/0DVD0/IAFPS_Sudoku/issues/3#issue-2701750150)
+![difficulty](https://github.com/user-attachments/assets/a5ea398d-a986-4e0d-9a16-bdc050a3b8c6)
 
 ## Installation
 
