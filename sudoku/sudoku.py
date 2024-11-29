@@ -1,10 +1,10 @@
 from solver import *
 from grid import *
 from measures import *
+import sys
 
 
 def display_message(screen, font, message, color=(255, 255, 255), duration=2000):
-    """Displays a message on the screen for a short period, then clears it."""
     message_area = pygame.Rect(0, SCREEN_HEIGHT - 120, SCREEN_WIDTH, 120)
     pygame.draw.rect(screen, (0, 0, 0), message_area)
 
@@ -18,9 +18,8 @@ def display_message(screen, font, message, color=(255, 255, 255), duration=2000)
 
 
 def select_difficulty(screen, font):
-    """Lets the user select the difficulty of the Sudoku."""
     running = True
-    selected = 0  # Default to the first option
+    selected = 0
     text_color = (255, 255, 255)
     highlight_color = (0, 128, 255)
     messages = ['Press 1 for Easy', 'Press 2 for Medium', 'Press 3 for Hard']
@@ -29,7 +28,6 @@ def select_difficulty(screen, font):
         screen.fill((0, 0, 0))
 
         for i, message in enumerate(messages):
-            # Highlight the selected option
             option_color = text_color if i != selected else highlight_color
             text = font.render(message, True, option_color)
             screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 150 + i * 50))
@@ -41,11 +39,11 @@ def select_difficulty(screen, font):
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:  # Navigate up
+                if event.key == pygame.K_UP:
                     selected = (selected - 1) % len(messages)
-                elif event.key == pygame.K_DOWN:  # Navigate down
+                elif event.key == pygame.K_DOWN:
                     selected = (selected + 1) % len(messages)
-                elif event.key == pygame.K_RETURN:  # Confirm selection
+                elif event.key == pygame.K_RETURN:
                     return ['Easy', 'Medium', 'Hard'][selected]
                 elif event.key == pygame.K_1:
                     return 'Easy'
@@ -56,20 +54,17 @@ def select_difficulty(screen, font):
 
 
 def draw_grid(screen, font, board, selected, initial_positions):
-    """Draws the Sudoku grid with enhanced UI."""
     for row in range(9):
         for col in range(9):
             cell_x = col * BLOCK_SIZE
             cell_y = row * BLOCK_SIZE
             rect = pygame.Rect(cell_x, cell_y, BLOCK_SIZE, BLOCK_SIZE)
 
-            # Highlight selected cell
             if selected == (row, col):
                 pygame.draw.rect(screen, (50, 50, 200), rect)
             else:
                 pygame.draw.rect(screen, (0, 0, 0), rect)
 
-            # Draw numbers
             val = board[row][col]
             if val != 0:
                 text_color = (255, 255, 255) if (row, col) in initial_positions else (0, 128, 255)
@@ -77,10 +72,8 @@ def draw_grid(screen, font, board, selected, initial_positions):
                 text_rect = text.get_rect(center=(cell_x + BLOCK_SIZE // 2, cell_y + BLOCK_SIZE // 2))
                 screen.blit(text, text_rect)
 
-            # Draw grid lines
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
 
-    # Bold 3x3 sub-grid borders
     for x in range(0, GRID_SIZE + 1, BLOCK_SIZE * 3):
         pygame.draw.line(screen, (255, 255, 255), (x, 0), (x, GRID_SIZE), 3)
         pygame.draw.line(screen, (255, 255, 255), (0, x), (GRID_SIZE, x), 3)
@@ -113,57 +106,51 @@ def draw_algorithm_buttons(screen, font, algo_buttons):
 def handle_mouse_events(event, board, selected, selected_number, font, screen, algo_funcs, initial_positions):
     pos = pygame.mouse.get_pos()
 
-    # Handle mouse click on grid
     if pos[0] < GRID_SIZE and pos[1] < GRID_SIZE:
         if event.type == pygame.MOUSEBUTTONDOWN:
-            selected = (pos[1] // BLOCK_SIZE, pos[0] // BLOCK_SIZE)  # Calculate selected cell
+            selected = (pos[1] // BLOCK_SIZE, pos[0] // BLOCK_SIZE)
             if selected_number and board[selected[0]][selected[1]] == 0:
                 if is_valid(board, selected_number, selected[0], selected[1]):
-                    board[selected[0]][selected[1]] = selected_number  # Place the selected number
+                    board[selected[0]][selected[1]] = selected_number
                     draw_grid(screen, font, board, selected, initial_positions)
                     pygame.display.update()
                 else:
                     display_message(screen, font, "Invalid move!", color=(255, 0, 0), duration=500)
-            elif event.button == 3:  # Right-click to clear a placed number
+            elif event.button == 3:
                 if selected not in initial_positions:
                     board[selected[0]][selected[1]] = 0
                     draw_grid(screen, font, board, selected, initial_positions)
                     pygame.display.update()
 
-    # Handle arrow key navigation and deletion
     elif event.type == pygame.KEYDOWN:
         if selected is None:
-            selected = (0, 0)  # Default to the top-left cell
+            selected = (0, 0)
 
         row, col = selected
         if event.key == pygame.K_UP:
-            row = (row - 1) % 9  # Move up and wrap around
+            row = (row - 1) % 9
         elif event.key == pygame.K_DOWN:
-            row = (row + 1) % 9  # Move down and wrap around
+            row = (row + 1) % 9
         elif event.key == pygame.K_LEFT:
-            col = (col - 1) % 9  # Move left and wrap around
+            col = (col - 1) % 9
         elif event.key == pygame.K_RIGHT:
-            col = (col + 1) % 9  # Move right and wrap around
+            col = (col + 1) % 9
 
-        # Update selected cell
         selected = (row, col)
         draw_grid(screen, font, board, selected, initial_positions)
         pygame.display.update()
 
-        # Handle deletion of a number in the selected cell
         if event.key in [pygame.K_BACKSPACE, pygame.K_DELETE]:
             if selected and selected not in initial_positions:
-                board[selected[0]][selected[1]] = 0  # Clear the selected cell
+                board[selected[0]][selected[1]] = 0
                 draw_grid(screen, font, board, selected, initial_positions)
                 pygame.display.update()
 
-    # Handle number selection using side buttons
     elif pos[0] > GRID_SIZE and pos[1] < SCREEN_HEIGHT - BUTTON_AREA_HEIGHT:
         number_idx = (pos[1] - 10) // (BUTTON_HEIGHT + 10)
         if 0 <= number_idx < 9:
             selected_number = number_idx + 1
 
-    # Handle algorithm button clicks
     elif SCREEN_HEIGHT - BUTTON_AREA_HEIGHT <= pos[1] <= SCREEN_HEIGHT:
         button_idx = (pos[0] - ((SCREEN_WIDTH - (3 * BUTTON_WIDTH + 2 * BUTTON_GAP)) // 2)) // (
                 BUTTON_WIDTH + BUTTON_GAP)
@@ -184,10 +171,10 @@ def main():
     algo_buttons = ["Backtracking", "Constraint", "Rule-based"]
     algo_funcs = [solve_with_backtracking, solve_with_constraint_propagation, solve_with_rule_based]
 
-    while True:  # Loop to allow returning to difficulty selection
+    while True:
         difficulty = select_difficulty(screen, font)
         board, initial_positions = generate_board(difficulty)
-        selected = (0, 0)  # Start at the top-left cell
+        selected = (0, 0)
         selected_number = None
         running = True
 
@@ -199,11 +186,11 @@ def main():
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_n:
                         board, initial_positions = generate_board(difficulty)
-                        selected = (0, 0)  # Reset selection
+                        selected = (0, 0)
                         selected_number = None
                         display_message(screen, font, "New puzzle generated", duration=500)
-                    elif event.key == pygame.K_ESCAPE:  # Handle Esc key to return to difficulty selection
-                        running = False  # Exit the current game loop and show the difficulty menu again
+                    elif event.key == pygame.K_ESCAPE:
+                        running = False
                     else:
                         selected, selected_number = handle_mouse_events(
                             event, board, selected, selected_number, font, screen, algo_funcs, initial_positions

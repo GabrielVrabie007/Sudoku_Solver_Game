@@ -1,10 +1,9 @@
 from grid import *
 import pygame
-import sys
 
 
 def solve_with_backtracking(board, screen, draw_grid, font, delay):
-    print("Starting backtracking...")  # Debugging entry
+    print("Starting backtracking...")
     empty = find_empty(board)
     if not empty:
         print("Puzzle solved!")
@@ -21,10 +20,10 @@ def solve_with_backtracking(board, screen, draw_grid, font, delay):
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        delay = max(10, delay - 10)  # Speed up
+                        delay = max(10, delay - 10)
                         print(f"Fast forwarding, new delay: {delay}")
                     elif event.key == pygame.K_s:
-                        delay = 0  # Skip delay
+                        delay = 0
                         print("Skipping to end...")
 
             if solve_with_backtracking(board, screen, draw_grid, font, delay):
@@ -43,8 +42,8 @@ def solve_with_constraint_propagation(board, screen, draw_grid, font, delay=100)
     def is_valid(board, num, row, col):
         block_row, block_col = (row // 3) * 3, (col // 3) * 3
         return all(num != board[row][x] for x in range(9)) and \
-               all(num != board[y][col] for y in range(9)) and \
-               all(num != board[block_row + y // 3][block_col + y % 3] for y in range(9))
+            all(num != board[y][col] for y in range(9)) and \
+            all(num != board[block_row + y // 3][block_col + y % 3] for y in range(9))
 
     def find_possibilities():
         possibilities = {}
@@ -62,12 +61,10 @@ def solve_with_constraint_propagation(board, screen, draw_grid, font, delay=100)
     def apply_naked_pairs(possibilities):
         units = define_units()
         for unit in units:
-            # Filter cells in the unit that exist in possibilities and have exactly two possibilities
             pairs = [(cell, possibilities[cell]) for cell in unit if
                      cell in possibilities and len(possibilities[cell]) == 2]
             for (cell1, poss1), (cell2, poss2) in combinations(pairs, 2):
                 if poss1 == poss2:
-                    # Remove these possibilities from other cells in the unit
                     for cell in unit:
                         if cell in possibilities and cell != cell1 and cell != cell2:
                             possibilities[cell] -= poss1
@@ -101,7 +98,6 @@ def solve_with_constraint_propagation(board, screen, draw_grid, font, delay=100)
         possibilities = find_possibilities()
         if not possibilities:
             return False
-        # Find the cell with the least number of possibilities
         cell, possible = min(possibilities.items(), key=lambda x: len(x[1]))
         row, col = cell
         for num in possible:
@@ -117,7 +113,6 @@ def solve_with_constraint_propagation(board, screen, draw_grid, font, delay=100)
                 pygame.display.update()
         return False
 
-    # Apply constraints as far as possible; if unsolved, fallback to backtracking
     while apply_constraints():
         if is_solved():
             return True
@@ -130,8 +125,8 @@ def solve_with_rule_based(board, screen, draw_grid, font, delay=100):
     def is_valid(board, num, row, col):
         block_row, block_col = (row // 3) * 3, (col // 3) * 3
         return all(num != board[row][x] for x in range(9)) and \
-               all(num != board[y][col] for y in range(9)) and \
-               all(num != board[block_row + y // 3][block_col + y % 3] for y in range(9))
+            all(num != board[y][col] for y in range(9)) and \
+            all(num != board[block_row + y // 3][block_col + y % 3] for y in range(9))
 
     def find_possibilities():
         possibilities = {}
@@ -178,23 +173,23 @@ def solve_with_rule_based(board, screen, draw_grid, font, delay=100):
                     board[row][col] = 0
             return False
 
-        print("Falling back to backtracking.")  # Debugging
+        print("Falling back to backtracking.")
         return backtrack()
 
     iteration = 0
-    max_iterations = 500  # Limit iterations to avoid infinite loop
+    max_iterations = 500
 
     while True:
         iteration += 1
         if iteration > max_iterations:
-            print("Max iterations reached, switching to backtracking.")  # Debugging
+            print("Max iterations reached, switching to backtracking.")
             return fallback_backtracking()
 
-        print(f"Iteration {iteration}: Solving with rule-based algorithm.")  # Debugging
+        print(f"Iteration {iteration}: Solving with rule-based algorithm.")
 
         possibilities = find_possibilities()
         if not possibilities:
-            print("No possibilities left. Exiting.")  # Debugging
+            print("No possibilities left. Exiting.")
             break
 
         progress = apply_rules(possibilities)
@@ -204,4 +199,3 @@ def solve_with_rule_based(board, screen, draw_grid, font, delay=100):
                 return True
             else:
                 return fallback_backtracking()
-

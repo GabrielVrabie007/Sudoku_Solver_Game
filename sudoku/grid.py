@@ -1,7 +1,7 @@
 import random
 
 DIFFICULTY_SETTINGS = {
-    'Easy': 40,  # Number of cells to pre-fill
+    'Easy': 40,
     'Medium': 30,
     'Hard': 20
 }
@@ -30,15 +30,20 @@ def generate_board(difficulty='Easy'):
 
 
 def is_valid(board, num, row, col):
-    block_row, block_col = (row // 3) * 3, (col // 3) * 3  # Start indices of the 3x3 block
+    block_row, block_col = (row // 3) * 3, (col // 3) * 3
 
-    for i in range(9):  # Check row and column
-        if board[row][i] == num or board[i][col] == num:
+    for i in range(9):
+        if board[row][i] == num:
+            print(f"Invalid due to row conflict at ({row}, {i})")
+            return False
+        if board[i][col] == num:
+            print(f"Invalid due to column conflict at ({i}, {col})")
             return False
 
-    for i in range(3):  # Check 3x3 block
+    for i in range(3):
         for j in range(3):
             if board[block_row + i][block_col + j] == num:
+                print(f"Invalid due to block conflict at ({block_row + i}, {block_col + j})")
                 return False
 
     return True
