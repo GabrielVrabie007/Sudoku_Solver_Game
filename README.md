@@ -47,7 +47,7 @@ Get ready to embark on a brain-teasing adventure where productivity meets entert
 
 ```bash
 # Clone the magical repository ✨
-git clone "https://github.com/0DVD0/IAFPS_Sudoku.git"
+git clone "https://github.com/GabrielVrabie007/Sudoku_Solver_Game.git"
 
 # Create your mystical environment 🔮
 python -m venv venv
