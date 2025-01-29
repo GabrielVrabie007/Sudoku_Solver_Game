@@ -1,0 +1,10 @@
+.git
+.gitignore
+sudoku/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+poetry.lock

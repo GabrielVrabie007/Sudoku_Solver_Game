@@ -1,53 +1,113 @@
-# Sudoku Manually or Using Algorithms Solving
+# 🎮 Sudoku Solver: Where Logic Meets Fun! 🧩
 
-Are 3 algorithms that can solve Sudoku Grid:Backtracking,Constraint-Propagation and Rule-Based
+> *"Life is like Sudoku - sometimes you need to take a step back to move forward!"* 🌟
 
-## Features
+## 📑 Table of Contents
 
--Select diffculty using up and down buttons from keyboard
+- [✨ Overview](#overview)
+- [🎯 Features](#features)
+- [🔧 Installation](#installation)
+- [🎪 Usage](#usage)
+- [📊 Dataset](#dataset)
+- [🤝 Contributing](#contributing)
+- [📜 License](#license)
 
--Running the program will display a pygame window with a sudoku grid the size being the standard 9x9
 
--Possibility to solve manually or using algorithms
+## ✨ Overview
+Welcome to our magical **Sudoku Game**! 🎩✨ 
 
--Press on keyboard "N" for new grid
+Get ready to embark on a brain-teasing adventure where productivity meets entertainment. Challenge yourself with:
+- 🎲 Classic manual solving
+- 🤖 Three powerful solving algorithms:
+  - 🔄 Backtracking
+  - 🧠 Constraint-Propagation
+  - 📋 Rule-Based
 
-![soved_sukoku](https://github.com/user-attachments/assets/f0431d6d-b90a-4b36-8295-f6e66a23a74b)
+*Remember: Every number you place is a step toward victory!* 🏆
 
-### Solved Sukoku
+## 🎯 Features
+
+🎮 **Game Controls:**
+- ⬆️⬇️ Select difficulty using arrow keys
+- 🎲 Press "N" to generate a new puzzle
+- 🖥️ Standard 9x9 grid in a sleek Pygame window
+- 🤖 Choose between human wisdom or algorithmic brilliance
+
+### 🖼️ Showcase
+
+![solved_sudoku](https://github.com/user-attachments/assets/f0431d6d-b90a-4b36-8295-f6e66a23a74b)
+*Victory has never looked so satisfying!* ✨
 
 ![difficulty](https://github.com/user-attachments/assets/a5ea398d-a986-4e0d-9a16-bdc050a3b8c6)
+*Choose your challenge!* 💪
 
-## Installation
+## 🔧 Installation
 
-1.Clone the repository:
+### 🌟 Method 1: Traditional Setup
+
+```bash
+# Clone the magical repository ✨
 git clone "https://github.com/0DVD0/IAFPS_Sudoku.git"
 
-2.Install your virtual environment
+# Create your mystical environment 🔮
 python -m venv venv
 venv\Scripts\activate
 
-3.Install the dependencies
-pip install -r requirements.txt
+# Summon the dependencies 📦
+poetry install
+```
 
-## Usage
+### 🐳 Method 2: Docker Magic
 
-To start the application,run:
-python sudoku.py
+> *For those who prefer containerized adventures!*
 
-## Contributing
+#### Prerequisites:
+- 🐋 Docker ([Install Here](https://docs.docker.com/desktop/setup/install/windows-install/))
+- 🖥️ X Server ([Download VcXsrv](https://sourceforge.net/projects/vcxsrv/))
 
-Contributions are welcome! Please follow these steps:
+#### 🚀 Setup Steps:
 
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature-name`.
-3. Commit your changes: `git commit -m 'Add some feature'`.
-4. Push to the branch: `git push origin feature-name`.
-5. Submit a pull request.
+1. 🖥️ **Launch XLaunch with:**
+   - "Multiple windows"
+   - Display number: -1
+   - "Start no client"
+   - ✅ "Disable access control"
+   - ❌ Uncheck "Native opengl"
 
-## Co-Authors
+2. 🔮 **In administrator terminal:**
+```bash
+set DISPLAY=host.docker.internal:0.0
+docker run -it --env="DISPLAY=host.docker.internal:0.0" --env="SDL_VIDEODRIVER=x11" --env="LIBGL_ALWAYS_INDIRECT=1" --env="PYTHONUNBUFFERED=1" gabriel385/sudoku_solver_v2:latest
+```
 
-- Gabriel Vrabie - [GitHub Profile](https://github.com/GabrielVrabie007)
-- Istrati David - [GitHub Profile](https://github.com/0DVD0)
-- Ceaglei Daniil - [GitHub Profile](https://github.com/danik169/danik169)
-- Tuluc Paul - [GitHub Profile](https://github.com/PaulT2004)
+## 🎪 Usage
+For who have choosen to use poetry:
+launch your adventure with: `python sudoku.py` 🚀
+
+## 🤝 Contributing
+
+Join our quest to make this game even better! 🌟
+
+1. 🍴 Fork the repository
+2. 🌿 Create your feature branch: `git checkout -b feature-name`
+3. 💫 Commit your changes: `git commit -m 'Add some feature'`
+4. 🚀 Push to the branch: `git push origin feature-name`
+5. 🎯 Open a pull request
+
+## 👨‍💻 The Dream Team
+
+Meet the wizards behind the magic:
+
+- 🧙‍♂️ Gabriel Vrabie - [GitHub](https://github.com/GabrielVrabie007)
+- 🧙‍♂️ Istrati David - [GitHub](https://github.com/0DVD0)
+- 🧙‍♂️ Ceaglei Daniil - [GitHub](https://github.com/danik169/danik169)
+- 🧙‍♂️ Tuluc Paul - [GitHub](https://github.com/PaulT2004)
+
+---
+
+
+
+
+We hope this project brings joy to your coding journey! Whether you're a puzzle enthusiast or an algorithm aficionado, there's something here for everyone. Questions? Ideas? We'd love to hear from you! 🌈
+
+*May your grid always be solvable!* 🍀
